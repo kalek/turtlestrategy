@@ -2,7 +2,7 @@ import React from "react";
 import "./App.css";
 
 import Papa from "papaparse";
-import csvFile from "./coffee.csv";
+import csvFile from "./dax.csv";
 import { Chart } from "react-charts";
 
 const App = () => {
@@ -19,26 +19,43 @@ const App = () => {
             new Date(item.Date),
             parseFloat(item.Close),
           ]);
+          console.log(tmp);
           const data = tmp.filter((item) => item[1]);
           const testData = data.map((item) => item[1]);
-          const buy = [];
+          const long = [];
+          const short = [];
           const cash = [];
           testData.forEach((item, index) => {
-            if (index >= 20) {
-              const last10 = testData.slice(index - 10, index);
-              const last20 = testData.slice(index - 20, index);
+            if (index >= 10) {
               const current = testData[index];
+              const last5 = testData.slice(index - 5, index);
+              const last10 = testData.slice(index - 10, index);
+              const maxLast5 = Math.max.apply(Math, last5);
               const maxLast10 = Math.max.apply(Math, last10);
-              const maxLast20 = Math.max.apply(Math, last20);
-              if (current > maxLast20 && !buy.length) {
-                buy.push(current);
-              } else if (current < maxLast10 && buy.length) {
+              const minLast5 = Math.min.apply(Math, last5);
+              const minLast10 = Math.min.apply(Math, last10);
+              if (current < minLast10 && !short.length) {
+                short.push(current);
+                console.log(index, current, "SHORT");
+              } else if (current > maxLast5 && short.length) {
                 cash.push({
                   current,
-                  buy: buy[0],
-                  value: current - buy[0],
+                  short: short[0],
+                  value: short[0] - current,
                 });
-                buy.pop();
+                short.pop();
+              }
+              if (current > maxLast10 && !long.length) {
+                long.push(current);
+                console.log(index, current, "LONG");
+              } else if (current < minLast5 && long.length) {
+                cash.push({
+                  current,
+                  long: long[0],
+                  value: current - long[0],
+                  indexClose: index,
+                });
+                long.pop();
               }
             }
           });
